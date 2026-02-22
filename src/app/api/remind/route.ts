@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 // This route would be called by a cron job every minute or so
 export async function GET(request: Request) {
     const authHeader = request.headers.get('authorization');

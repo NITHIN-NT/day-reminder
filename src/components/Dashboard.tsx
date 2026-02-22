@@ -41,14 +41,14 @@ export default function Dashboard() {
         // Set up real-time subscription
         const tasksSubscription = supabase
             .channel('tasks-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, (payload) => {
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, (payload: any) => {
                 fetchTasks();
             })
             .subscribe();
 
         const completionsSubscription = supabase
             .channel('completions-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'completions' }, (payload) => {
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'completions' }, (payload: any) => {
                 fetchCompletions();
             })
             .subscribe();
@@ -78,7 +78,7 @@ export default function Dashboard() {
 
         if (data) {
             const completionMap: Record<string, boolean> = {};
-            data.forEach((c) => {
+            data.forEach((c: any) => {
                 completionMap[c.task_id] = true;
             });
             setCompletions(completionMap);
@@ -160,7 +160,7 @@ export default function Dashboard() {
             .from('completions')
             .select('completed_at');
         if (data) {
-            setAllCompletions(data.map(c => c.completed_at));
+            setAllCompletions(data.map((c: any) => c.completed_at));
         }
     };
 
