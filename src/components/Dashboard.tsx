@@ -73,15 +73,44 @@ export default function Dashboard() {
     const fetchCompletions = async () => {
         const { data, error } = await supabase
             .from('completions')
-            .select('task_id')
-            .eq('completed_at', today);
+            .select('task_id, completed_at')
+            .order('completed_at', { ascending: false });
 
         if (data) {
             const completionMap: Record<string, boolean> = {};
+            const uniqueDays = new Set<string>();
+
             data.forEach((c: any) => {
-                completionMap[c.task_id] = true;
+                if (c.completed_at === today) {
+                    completionMap[c.task_id] = true;
+                }
+                uniqueDays.add(c.completed_at);
             });
+
             setCompletions(completionMap);
+            setAllCompletions(Array.from(uniqueDays));
+
+            // Calculate streak
+            const sortedDays = Array.from(uniqueDays).sort((a, b) => b.localeCompare(a));
+            let currentStreak = 0;
+            let checkDate = new Date();
+
+            // If none done today, check if yesterday was done to keep streak alive until end of today
+            let hasToday = uniqueDays.has(today);
+            if (!hasToday) {
+                checkDate.setDate(checkDate.getDate() - 1);
+            }
+
+            for (let i = 0; i < sortedDays.length; i++) {
+                const dateStr = formatDate(checkDate);
+                if (uniqueDays.has(dateStr)) {
+                    currentStreak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+            setStreak(currentStreak);
         }
     };
 
@@ -218,7 +247,7 @@ export default function Dashboard() {
                             <Statistics
                                 completionsCount={allCompletions.length}
                                 totalTasks={tasks.length}
-                                streak={12}
+                                streak={streak}
                             />
                         </motion.div>
                     )}
@@ -252,7 +281,7 @@ export default function Dashboard() {
                                 <div>
                                     <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">Streak</p>
                                     <p className="text-2xl font-medium text-gray-900 flex items-center justify-end gap-1">
-                                        12 <Flame size={20} className="text-orange-500 fill-orange-500" />
+                                        {streak} <Flame size={20} className="text-orange-500 fill-orange-500" />
                                     </p>
                                 </div>
                                 <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500">
