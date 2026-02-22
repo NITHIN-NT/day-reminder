@@ -52,7 +52,7 @@ export default function LoginPage() {
                             onChange={(e) => setPassword(e.target.value)}
                             className={cn(
                                 "w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all text-center text-lg",
-                                error && "border-red-200 focus:ring-red-50'
+                                error && "border-red-200 focus:ring-red-50"
                             )}
                             required
                         />

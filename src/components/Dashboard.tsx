@@ -5,7 +5,10 @@ import { Plus, Calendar, BarChart2, LogOut, CheckCircle2, Flame } from 'lucide-r
 import { supabase } from '@/lib/supabase';
 import TaskCard from '@/components/TaskCard';
 import TaskDialog from '@/components/TaskDialog';
+import Statistics from '@/components/Statistics';
+import CalendarView from '@/components/CalendarView';
 import { formatDate } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Task {
@@ -144,6 +147,23 @@ export default function Dashboard() {
         window.location.reload();
     };
 
+    const [showStats, setShowStats] = useState(false);
+    const [showCalendar, setShowCalendar] = useState(false);
+    const [allCompletions, setAllCompletions] = useState<string[]>([]);
+
+    useEffect(() => {
+        fetchAllCompletions();
+    }, []);
+
+    const fetchAllCompletions = async () => {
+        const { data } = await supabase
+            .from('completions')
+            .select('completed_at');
+        if (data) {
+            setAllCompletions(data.map(c => c.completed_at));
+        }
+    };
+
     const completedCount = Object.keys(completions).length;
     const totalCount = tasks.length;
     const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
@@ -158,10 +178,22 @@ export default function Dashboard() {
                         <p className="text-gray-400 font-light text-sm">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button className="p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-all">
+                        <button
+                            onClick={() => { setShowStats(!showStats); setShowCalendar(false); }}
+                            className={cn(
+                                "p-2.5 rounded-xl transition-all",
+                                showStats ? "text-blue-500 bg-blue-50" : "text-gray-400 hover:text-gray-900 hover:bg-gray-50"
+                            )}
+                        >
                             <BarChart2 size={22} />
                         </button>
-                        <button className="p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-all">
+                        <button
+                            onClick={() => { setShowCalendar(!showCalendar); setShowStats(false); }}
+                            className={cn(
+                                "p-2.5 rounded-xl transition-all",
+                                showCalendar ? "text-blue-500 bg-blue-50" : "text-gray-400 hover:text-gray-900 hover:bg-gray-50"
+                            )}
+                        >
                             <Calendar size={22} />
                         </button>
                         <button
@@ -175,40 +207,70 @@ export default function Dashboard() {
             </header>
 
             <main className="max-w-screen-md mx-auto px-6 pt-8">
-                {/* Statistics Card */}
-                <section className="mb-10 bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500">
-                                <CheckCircle2 size={24} />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">Progress</p>
-                                <p className="text-2xl font-medium text-gray-900">{completedCount}/{totalCount} tasks</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 text-right">
-                            <div>
-                                <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">Streak</p>
-                                <p className="text-2xl font-medium text-gray-900 flex items-center justify-end gap-1">
-                                    12 <Flame size={20} className="text-orange-500 fill-orange-500" />
-                                </p>
-                            </div>
-                            <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500">
-                                <Flame size={24} />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                <AnimatePresence mode="wait">
+                    {showStats && (
                         <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${progress}%` }}
-                            transition={{ duration: 1, ease: "easeOut" }}
-                            className="h-full bg-black rounded-full"
-                        />
-                    </div>
-                </section>
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="overflow-hidden"
+                        >
+                            <Statistics
+                                completionsCount={allCompletions.length}
+                                totalTasks={tasks.length}
+                                streak={12}
+                            />
+                        </motion.div>
+                    )}
+
+                    {showCalendar && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="overflow-hidden"
+                        >
+                            <CalendarView completions={allCompletions} />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Statistics Card (Always shown compact) */}
+                {!showStats && !showCalendar && (
+                    <section className="mb-10 bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500">
+                                    <CheckCircle2 size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">Progress</p>
+                                    <p className="text-2xl font-medium text-gray-900">{completedCount}/{totalCount} tasks</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 text-right">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-400 uppercase tracking-wider">Streak</p>
+                                    <p className="text-2xl font-medium text-gray-900 flex items-center justify-end gap-1">
+                                        12 <Flame size={20} className="text-orange-500 fill-orange-500" />
+                                    </p>
+                                </div>
+                                <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500">
+                                    <Flame size={24} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${progress}%` }}
+                                transition={{ duration: 1, ease: "easeOut" }}
+                                className="h-full bg-black rounded-full"
+                            />
+                        </div>
+                    </section>
+                )}
 
                 {/* Task List */}
                 <div className="space-y-4">
